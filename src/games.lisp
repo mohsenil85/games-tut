@@ -20,51 +20,21 @@
   (:metaclass  postmodern:dao-class)
   (:keys name))
 
-;(postmodern:dao-table-definition 'game)
-;(postmodern:execute (postmodern:dao-table-definition 'game))
 
 (postmodern:connect-toplevel "lmohseni" "lmohseni" "lmohseni" "localhost")
-;(postmodern:query (:select '* :from 'game ))
-;(postmodern:query  "drop table game")
-;(postmodern:query "create table game (game varchar(20) primary key, votes int default(0));")
-;(postmodern:dao-table-definition 'game)
-
-;(setf baz (postmodern:insert-dao (make-instance 'game :name "baz")))
-;;(setf many-lost-hours (make-instance 'game :name "Tetris"))
-;;(votes many-lost-hours)
-;;
-
-;(defmethod vote-for (user-selected-game)
-;  (incf (votes user-selected-game)))
-
-;;(let ((g (postmodern:get-dao  'game "bar")))
- ;; (incf (votes g)) (postmodern:update-dao g))
+(setf (html-mode) :html5)
 
  (defmethod vote-for (user-selected-game)
    (let ((g (postmodern:get-dao 'game user-selected-game)))
   (incf (votes g)) 
   (postmodern:update-dao g) ))
-;(vote-for "bar")
-;(defvar *games* '())
-
-;(postmodern:get-dao 'game :name "Tetris")
-
-  ;(postmodern:query (:select 'g :from 'game :where (:like 'name '$1))) 
 
 (defun game-from-name (name)
   (postmodern:query (:select '* :from 'game :where (:like 'name name))) )
-  ;(postmodern:get-dao 'game :name name)
-;(game-from-name "foo")
-;(defun game-from-name (name)
-;  (find name  *games* :test #'string-equal
-;                      :key #'name))
 
-;(game-stored? "foo")
 (defun game-stored? (game-name)
   (game-from-name game-name))
 
-;(postmodern:sql (select '* :from 'game :order :by 'votes :desc ))
-;(postmodern:query "select * from game order by votes desc")
 
 (defun games ()
 (postmodern:query "select * from game order by votes desc"))
@@ -73,22 +43,7 @@
   (unless (game-stored? name)
     (postmodern:insert-dao (make-instance 'game :name name) )))
 
-;(mapcar #'name (games))
-;(add-game "foo")
-;(add-game "zap")
-;(vote-for "zap")
-;(add-game "baz")
-;(add-game "zip")
-;(add-game "ding")
-;;
-(setf (html-mode) :html5)
 
-;(with-html-output (*standard-output* nil :prologue t :indent t)
-;  (:html
-;    (:head
-;      (:title "test"))
-;    (:body
-;      (:p "preety neett"))))
 
 
 (defmacro standard-page ((&key title) &body body)
@@ -108,15 +63,25 @@
 (hunchentoot:start srv )
 (hunchentoot:stop srv)
       
-;(standard-page (:title "Retro Games")
- ; (:h1 "Top Retro Games")
- ; (:p "We'll write the code later..."))
 
 (defmacro define-url-fn ((name) &body body)
   `(progn
      (defun ,name ()
        ,@body)
      (push (create-prefix-dispatcher ,(format nil "/~(~a~).htm" name ) ',name) *dispatch-table*))) 
+
+
+hunchentoot:*dispatch-table*
+(dolist ( game(games))
+  (format t "~a~% " (car game))
+  )
+
+(with-html-output (dolist (game (games))
+                    (:li 
+                      (:a :href (format nil "vote.htm?name=~a" (car game)) "VOTE!")
+                      (fmt "~A with ~d votes" (name game) (cdr game)))))
+
+
 
 (define-url-fn (retro-games)
   (standard-page (:title "top retro games")
@@ -127,12 +92,14 @@
                    (dolist (game (games))
                      (htm
                        (:li
-                         (:a :href (format nil "vote.htm?name=~a" (name game)) "VOTE!")
-                         (fmt "~A with ~d votes" (name game) (votes game)))))))))
+                         (:a :href (format nil "vote.htm?name=~a" (car game)) "VOTE!")
+                         (fmt "~A with ~d votes" (car game) (cdr game)))))))))
+
+(game-from-name "zap")
 (define-url-fn (vote)
   (let ((game (game-from-name (parameter "name"))))
     (if game
-      (vote-for game))
+      (vote-for (car game)))
     (redirect "/retro-games.htm")))
   
 
