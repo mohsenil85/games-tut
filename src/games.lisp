@@ -22,10 +22,10 @@
   (:keys name))
 
 
-(connect-toplevel "lmohseni" "lmohseni" "lmohseni" "localhost")
-(setf srv (make-instance 'hunchentoot:easy-acceptor :port 4242))
-(hunchentoot:start srv )
-(hunchentoot:stop srv)
+;(connect-toplevel "lmohseni" "lmohseni" "lmohseni" "localhost")
+;(setf srv (make-instance 'hunchentoot:easy-acceptor :port 4242))
+;(hunchentoot:start srv )
+;(hunchentoot:stop srv)
 ;(execute (dao-table-definition 'game ))
 (setf (html-mode) :html5)
 
@@ -67,43 +67,33 @@
   `(progn
      (defun ,name ()
        ,@body)
-     (push (create-prefix-dispatcher ,(format nil "/~(~a~).htm" name ) ',name) *dispatch-table*))) 
-
-
-(dolist ( game(games))
-  (format t "~a~%" (car game)))
-
-(with-html-output (dolist (game (games))
-                    (:li 
-                      (:a :href (format nil "vote.htm?name=~a" (car game)) "VOTE!")
-                      (fmt "~A with ~d votes" (name game) (cdr game)))))
-
+     (push (create-prefix-dispatcher ,(format nil "/~(~a~)" name ) ',name) *dispatch-table*))) 
 
 
 (define-url-fn (retro-games)
   (standard-page (:title "top retro games")
     (:h1 "vote on your favorite")
-    (:p "missing a game?  add it " (:a :href "new-game.htm" "here"))
+    (:p "missing a game?  add it " (:a :href "new-game" "here"))
     (:div :id "chart"
      (:ol
        (dolist (game (games))
          (htm
            (:li
-             (:a :href (format nil "vote.htm?name=~a" (car game)) "VOTE!")
+             (:a :href (format nil "vote?name=~a" (car game)) "VOTE!")
              (fmt "~A with ~d votes" (car game) (cdr game)))))))))
 
 (define-url-fn (vote)
   (let ((game (parameter "name")))
     (if (game-stored? game)
       (vote-for game))
-    (redirect "/retro-games.htm")))
+    (redirect "/retro-games")))
 
 
 (define-url-fn (new-game)
   (standard-page
     (:title "add a new game")
     (:h1 "add a new game")
-    (:form :action "/game-added.htm" :method "post"
+    (:form :action "/game-added" :method "post"
      (:p "game name" (:br)
       (:input :type "text"
        :name "name"
@@ -117,5 +107,5 @@
   (let ((name (parameter "name")))
     (unless (or (null name) (zerop (length name)))
       (add-game name))
-    (redirect "/retro-games.htm")))
+    (redirect "/retro-games")))
 
